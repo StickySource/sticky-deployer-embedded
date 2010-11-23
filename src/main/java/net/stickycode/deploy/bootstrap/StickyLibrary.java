@@ -13,22 +13,24 @@
 package net.stickycode.deploy.bootstrap;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 
-public class StickyJar {
+public class StickyLibrary {
 
-  private ZipFile zipFile;
-  private String jarPath;
+  private final String jarPath;
+  private final Set<String> classes = new HashSet<String>();
+  private final Set<String> resources = new HashSet<String>();
 
-  public StickyJar(ZipFile zipFile, String jarPath) {
+  public StickyLibrary(ZipFile zipFile, String jarPath) {
     super();
-    this.zipFile = zipFile;
     this.jarPath = jarPath;
+    index(zipFile);
   }
 
   @Override
@@ -36,43 +38,47 @@ public class StickyJar {
     return jarPath;
   }
 
-  public StickyClass locate(String name) {
+
+  private void index(ZipFile zipFile) {
+    ZipEntry entry = zipFile.getEntry(jarPath);
     try {
-      return safeLocate(name);
+      processEntry(zipFile, entry);
     }
     catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private StickyClass safeLocate(String name) throws IOException {
-    String searchFor = name.replace('.', '/') + ".class";
-    ZipEntry entry = zipFile.getEntry(jarPath);
+  private void processEntry(ZipFile zipFile, ZipEntry entry) throws IOException {
     JarInputStream i = new JarInputStream(zipFile.getInputStream(entry));
     JarEntry current = i.getNextJarEntry();
     while (current != null) {
       if (!current.isDirectory())
-        if (current.getName().equals(searchFor))
-          return load(i, current);
+        processName(current.getName());
 
+      i.closeEntry();
       current = i.getNextJarEntry();
     }
-    return null;
   }
 
-  private StickyClass load(JarInputStream i, JarEntry current) throws IOException {
-    if (current.getSize() > Integer.MAX_VALUE)
-      throw new RuntimeException("Why is your class so big?");
+  private void processName(String name) {
+    if (name.endsWith(".class"))
+      classes.add(name.substring(0, name.length() - 6).replace('/', '.'));
+    else
+      resources.add(name);
+  }
 
-    int size = (int)current.getSize();
-    byte[] b = new byte[size];
-    int read = i.read(b, 0, size);
-    System.out.println("Read " + read);
-    for (int k = 0; k < read; k++) {
-      System.out.print(Integer.toString( ( b[k] & 0xff ) + 0x100, 16).substring( 1 ));
-    }
-//    return b;
-    return new StickyClass(b, read);
+  public String getJarPath() {
+    return jarPath;
+  }
+
+  public Set<String> getClasses() {
+    return classes;
+  }
+
+
+  public Set<String> getResources() {
+    return resources;
   }
 
 }

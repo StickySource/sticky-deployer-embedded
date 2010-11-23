@@ -25,14 +25,36 @@ public class BootstrapTest {
 
   @Test
   public void boot() throws ClassNotFoundException {
-    File application = new File("/home/michael/src/stickycode/trunk/net.stickycode.examples/sticky-example-boostrap/target/sticky-example-bootstrap-1.1-SNAPSHOT-sample.jar");
 //    File application = new File(target, "sticky-deployer-sample-2jar-sample.zip");
-    StickyBootstrap b = new StickyBootstrap(application);
-    b.boot();
-    Class<?> klass = b.load("net.stickycode.stereotype.Configured");
-    assertThat(klass).isNotNull();
-    Class<?> k2 = b.load("net.stickycode.exception.PermanentException");
-    assertThat(k2).isNotNull();
+    StickyEmbedder b = new StickyEmbedder() {
+      @Override
+      protected File deriveApplicationFile() {
+        return new File("/home/michael/src/stickycode/trunk/net.stickycode.examples/sticky-example-boostrap/target/sticky-example-bootstrap-1.1-SNAPSHOT-sample.jar");
+      }
+    };
+//    assertThat(b.getLibraries()).containsExactly(
+//        "RED-INF/lib/sticky-deployer-tomcat6-2.2.jar",
+//        "RED-INF/lib/coyote-6.0.29.jar",
+//        "RED-INF/lib/catalina-6.0.29.jar",
+//        "RED-INF/lib/servlet-api-6.0.29.jar",
+//        "RED-INF/lib/juli-6.0.29.jar",
+//        "RED-INF/lib/sticky-cli-1.3.jar",
+//        "RED-INF/lib/sticky-reflector-1.1.jar",
+//        "RED-INF/lib/sticky-configured-1.2.jar",
+//        "RED-INF/lib/sticky-exception-1.3.jar",
+//        "RED-INF/lib/sticky-coercion-1.1.jar",
+//        "RED-INF/lib/sticky-stereotype-1.1.jar",
+//        "RED-INF/lib/javax.inject-1.jar"
+//        );
+    assertThat(b.getLibraries()).hasSize(12);
+    assertThat(b.getLibraries().iterator().next().getClasses()).hasSize(7);
+    assertThat(b.getLibraries().iterator().next().getResources()).hasSize(7);
+
+//    b.launch();
+//    Class<?> klass = b.load("net.stickycode.stereotype.Configured");
+//    assertThat(klass).isNotNull();
+//    Class<?> k2 = b.load("net.stickycode.exception.PermanentException");
+//    assertThat(k2).isNotNull();
 //    b.load("net.stickcode.deploy.tomcat.DeploymentConfiguration");
   }
 

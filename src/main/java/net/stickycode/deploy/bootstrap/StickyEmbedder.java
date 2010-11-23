@@ -16,23 +16,20 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Enumeration;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 
-public class StickyBootstrap {
+public class StickyEmbedder {
 
+  private final List<StickyLibrary> libraries = new LinkedList<StickyLibrary>();
   private final File application;
-  private StickyClassLoader classLoader;
 
-  public StickyBootstrap(File application) {
-    super();
-    this.application = application;
-    this.classLoader = new StickyClassLoader(getClass().getClassLoader());
-  }
-
-  public void boot() {
+  public StickyEmbedder() {
+    application = deriveApplicationFile();
     try {
       ZipFile file = new ZipFile(application);
       loadEntries(file);
@@ -43,26 +40,45 @@ public class StickyBootstrap {
     catch (IOException e) {
       throw new RuntimeException(e);
     }
-
   }
 
-  private void loadEntries(ZipFile file) throws MalformedURLException {
+  protected File deriveApplicationFile() {
+    return new File(StickyEmbedder.class.getProtectionDomain().getCodeSource().getLocation().getPath());
+  }
+
+  protected void loadEntries(ZipFile file) throws MalformedURLException {
     Enumeration<? extends ZipEntry> entries = file.entries();
     while (entries.hasMoreElements()) {
       ZipEntry zipEntry = (ZipEntry) entries.nextElement();
-      if (zipEntry.getName().endsWith(".jar"))
-        classLoader.add(new StickyJar(file, zipEntry.getName()));
+      if (zipEntry.getName().endsWith(".jar")) {
+        System.out.println(zipEntry.getName());
+        libraries.add(new StickyLibrary(file, zipEntry.getName()));
+      }
     }
-  }
-
-  public Class<?> load(String name) throws ClassNotFoundException {
-    return classLoader.loadClass(name);
   }
 
   public static void main(String[] args) {
-    for (String string : args) {
-      System.out.println(string);
+    System.out.println("Starting StickyEmbedder");
+    StickyEmbedder embedder = new StickyEmbedder();
+  }
+
+
+  public List<StickyLibrary> getLibraries() {
+    return libraries;
+  }
+
+  public void launch() {
+    StickyClassLoader l = new StickyClassLoader(ClassLoader.getSystemClassLoader(), this);
+    try {
+      Class<?> e = l.loadClass("net.stickycode.exception.PermanentException");
+      System.out.println(e);
+    }
+    catch (ClassNotFoundException e) {
+      throw new RuntimeException(e);
     }
   }
+
+
+
 
 }
