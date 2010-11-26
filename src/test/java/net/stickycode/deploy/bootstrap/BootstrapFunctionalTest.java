@@ -14,12 +14,13 @@ package net.stickycode.deploy.bootstrap;
 
 import java.io.File;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.fest.assertions.Assertions.assertThat;
 
 
-public class BootstrapTest {
+public class BootstrapFunctionalTest {
 
   private File target = new File("target/samples");
 
@@ -29,7 +30,7 @@ public class BootstrapTest {
     StickyEmbedder b = new StickyEmbedder() {
       @Override
       protected File deriveApplicationFile() {
-        return new File("/home/michael/src/stickycode/trunk/net.stickycode.examples/sticky-example-boostrap/target/sticky-example-bootstrap-1.1-SNAPSHOT-sample.jar");
+        return new File("target/sticky-deployer-embedded-sample.jar");
       }
     };
 //    assertThat(b.getLibraries()).containsExactly(

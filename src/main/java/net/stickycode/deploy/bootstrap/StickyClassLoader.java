@@ -12,7 +12,10 @@
  */
 package net.stickycode.deploy.bootstrap;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
@@ -52,7 +55,7 @@ public class StickyClassLoader
   }
 
   private Class<?> loadClass(StickyLibrary j, String name) {
-    URL url = getResource('/' + j.getJarPath());
+    URL url = embedder.getClass().getResource("/" + j.getJarPath());
     try {
       JarInputStream jar = new JarInputStream(url.openStream());
       return loadClass(jar, name);
@@ -68,7 +71,7 @@ public class StickyClassLoader
     while (current != null) {
       if (!current.isDirectory())
         if (current.getName().equals(searchFor))
-          return load(current.getName(), i, current);
+          return load(name, i, current);
 
       i.closeEntry();
       current = i.getNextJarEntry();
@@ -80,15 +83,34 @@ public class StickyClassLoader
   private Class<?> load(String name, JarInputStream i, JarEntry current) throws IOException {
     if (current.getSize() > Integer.MAX_VALUE)
       throw new RuntimeException("Why is your class so big?");
-
     int size = (int)current.getSize();
-    byte[] b = new byte[size];
-    int read = i.read(b, 0, size);
-    System.out.println("Read " + read);
-    for (int k = 0; k < read; k++) {
-      System.out.print(Integer.toString( ( b[k] & 0xff ) + 0x100, 16).substring( 1 ));
-    }
+    if (size < 0)
+      size = 2048;
 
-    return defineClass(name, b, 0, read);
+    byte[] b = copy(i, size);
+//    int size = (int)current.getSize();
+//    if (size < 0)
+//      size = 10000;
+//    byte[] b = new byte[size];
+//    int read = i.read(b, 0, size);
+    System.out.println("Read " + b.length);
+//    for (int k = 0; k < read; k++) {
+//      System.out.print(Integer.toString( ( b[k] & 0xff ) + 0x100, 16).substring( 1 ));
+//    }
+
+    return defineClass(name, b, 0, b.length);
   }
+
+
+  protected byte[] copy(InputStream in, int size) throws IOException {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream(size);
+    byte[] buf = new byte[2048];
+    while (true) {
+        int len = in.read(buf);
+        if (len < 0)
+          return baos.toByteArray();
+
+        baos.write(buf, 0, len);
+    }
+}
 }
