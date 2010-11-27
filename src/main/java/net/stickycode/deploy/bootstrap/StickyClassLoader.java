@@ -15,7 +15,13 @@ package net.stickycode.deploy.bootstrap;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLStreamHandlerFactory;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.LinkedList;
+import java.util.Vector;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
@@ -23,14 +29,17 @@ public class StickyClassLoader
     extends ClassLoader {
 
   private final StickyEmbedder embedder;
+  private StickyEmbeddedUrlStreamHandler urlFactory;
 
   public StickyClassLoader(ClassLoader parent, StickyEmbedder stickyEmbedder) {
     super(parent);
     this.embedder = stickyEmbedder;
+    urlFactory = new StickyEmbeddedUrlStreamHandler(stickyEmbedder);
   }
 
   @Override
   protected Class<?> findClass(String name) throws ClassNotFoundException {
+    embedder.trace("Looking up class %s", name);
     for (StickyLibrary j : embedder.getLibraries()) {
       if (j.getClasses().contains(name)) {
         embedder.debug("loading %s from %s", j, name);
@@ -39,6 +48,61 @@ public class StickyClassLoader
     }
     throw new ClassNotFoundException(name);
   }
+
+  @Override
+  protected URL findResource(String name) {
+    embedder.trace("Looking up resource %s", name);
+    for (StickyLibrary j : embedder.getLibraries()) {
+      if (j.getResources().contains(name)) {
+        URL url = urlFactory.createResourceUrl(name, j);
+        embedder.debug("define url %s for %s in %s", url, name, j);
+        return url;
+      }
+    }
+
+    return null;
+  }
+
+  @Override
+  protected Enumeration<URL> findResources(String name) throws IOException {
+    LinkedList<URL> list = new LinkedList<URL>();
+    embedder.trace("Looking up resources %s", name);
+    for (StickyLibrary j : embedder.getLibraries()) {
+      if (j.getResources().contains(name)) {
+        URL url = urlFactory.createResourceUrl(name, j);
+        embedder.debug("define url %s for %s in %s", url, name, j);
+        list.add(url);
+      }
+    }
+
+    return Collections.enumeration(list);
+  }
+
+  // private URL loadResource(StickyLibrary j, String name) {
+  // URL url = embedder.getClass().getResource("/" + j.getJarPath());
+  // try {
+  // JarInputStream jar = new JarInputStream(url.openStream());
+  // return loadResource(jar, name);
+  // }
+  // catch (IOException e) {
+  // throw new RuntimeException(e);
+  // }
+  // }
+  //
+  // private URL loadResource(JarInputStream i, String name) throws IOException {
+  // String searchFor = name.replace('.', '/') + ".class";
+  // JarEntry current = i.getNextJarEntry();
+  // while (current != null) {
+  // if (!current.isDirectory())
+  // if (current.getName().equals(searchFor))
+  // return load(name, i, current);
+  //
+  // i.closeEntry();
+  // current = i.getNextJarEntry();
+  // }
+  //
+  // return null;
+  // }
 
   private Class<?> loadClass(StickyLibrary j, String name) {
     URL url = embedder.getClass().getResource("/" + j.getJarPath());
@@ -83,7 +147,8 @@ public class StickyClassLoader
       baos.write(buf, 0, len);
     }
 
-    throw new TheClassBeingLoadedWasBiggerThan2GWhichSeemsWrong(current.getName(), baos.size(), current.getCompressedSize(), current.getSize());
+    throw new TheEntryBeingLoadedWasBiggerThan2GWhichSeemsWrong(current.getName(), baos.size(), current.getCompressedSize(),
+        current.getSize());
   }
 
   /**
@@ -94,7 +159,8 @@ public class StickyClassLoader
    */
   private int deriveClassSize(JarEntry current) {
     if (current.getSize() >= Integer.MAX_VALUE)
-      throw new TheUncompressedSizeListedInJarIsGreaterThan2GbWhichSeemsWrong(current.getName(), current.getCompressedSize(), current.getSize());
+      throw new TheUncompressedSizeListedInJarIsGreaterThan2GbWhichSeemsWrong(current.getName(), current.getCompressedSize(),
+          current.getSize());
 
     int size = (int) current.getSize();
     if (size < 0)

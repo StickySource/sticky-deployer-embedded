@@ -12,7 +12,11 @@
  */
 package net.stickycode.deploy.bootstrap;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.jar.Attributes;
@@ -71,15 +75,26 @@ public class StickyLibrary {
     Manifest manifest = i.getManifest();
     if (manifest != null) {
       mainClass = manifest.getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
-      embedder.debug("Found main class %s for jar %s", mainClass, jarPath);
+      if (mainClass != null)
+        embedder.debug("Found main class %s for jar %s", mainClass, jarPath);
     }
   }
 
   private void processName(String name) {
     if (name.endsWith(".class"))
-      classes.add(name.substring(0, name.length() - 6).replace('/', '.'));
+      addClass(name.substring(0, name.length() - 6).replace('/', '.'));
     else
-      resources.add(name);
+      addResource(name);
+  }
+
+  private boolean addResource(String name) {
+    embedder.trace("found resource %s", name);
+    return resources.add(name);
+  }
+
+  private void addClass(String name) {
+    embedder.trace("found class %s", name);
+    classes.add(name);
   }
 
   public String getJarPath() {
@@ -96,6 +111,76 @@ public class StickyLibrary {
 
   public String getMainClass() {
     return mainClass;
+  }
+
+  public InputStream getInputStream(String path) {
+    URL url = getJarStream();
+    try {
+      JarInputStream jar = new JarInputStream(url.openStream());
+      try {
+        return loadStream(jar, path);
+      }
+      finally {
+        jar.close();
+      }
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private URL getJarStream() {
+    embedder.trace("opening jar /%s", jarPath);
+    URL url = embedder.getClass().getResource("/" + jarPath);
+    if (url == null)
+      throw new RuntimeException("Where did " + jarPath + " go?");
+
+    return url;
+  }
+
+  private InputStream loadStream(JarInputStream jar, String path) throws IOException {
+    JarEntry current = jar.getNextJarEntry();
+    while (current != null) {
+      if (!current.isDirectory())
+        if (current.getName().equals(path))
+          return new ByteArrayInputStream(load(path, jar, current));
+
+      jar.closeEntry();
+      current = jar.getNextJarEntry();
+    }
+
+    return null;
+  }
+
+  private byte[] load(String name, JarInputStream in, JarEntry current) throws IOException {
+    int size = deriveEntrySize(current);
+    ByteArrayOutputStream baos = new ByteArrayOutputStream(size);
+    byte[] buf = new byte[2048];
+    while (baos.size() < (Integer.MAX_VALUE - 2048)) {
+      int len = in.read(buf);
+      if (len < 0)
+        return baos.toByteArray();
+
+      baos.write(buf, 0, len);
+    }
+
+    throw new TheEntryBeingLoadedWasBiggerThan2GWhichSeemsWrong(current.getName(), baos.size(), current.getCompressedSize(), current.getSize());
+  }
+
+  /**
+   * Return the size of the class so that the byte array output stream is optimally sized and no copies are needed.
+   *
+   * If the jar is dodgy and does not have proper sizes for the classes then return 2048 which is a reasonably guess for the average
+   * class.
+   */
+  private int deriveEntrySize(JarEntry current) {
+    if (current.getSize() >= Integer.MAX_VALUE)
+      throw new TheUncompressedSizeListedInJarIsGreaterThan2GbWhichSeemsWrong(current.getName(), current.getCompressedSize(), current.getSize());
+
+    int size = (int) current.getSize();
+    if (size < 0)
+      size = 2048;
+    return size;
   }
 
 }

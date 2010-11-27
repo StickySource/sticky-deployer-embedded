@@ -12,7 +12,13 @@
  */
 package net.stickycode.deploy.bootstrap;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.Enumeration;
 
 import org.junit.Test;
 
@@ -22,17 +28,54 @@ import static org.fest.assertions.Assertions.assertThat;
 public class BootstrapFunctionalTest {
 
   @Test
-  public void boot() throws ClassNotFoundException {
-    StickyEmbedder b = new StickyEmbedder() {
+  public void jarsWithDodgyStructures() throws ClassNotFoundException {
+    StickyEmbedder b = new StickyEmbedder("--debug", "--trace") {
       @Override
       protected File deriveApplicationFile() {
         return new File("target/sticky-deployer-embedded-sample.jar");
       }
     };
 
+    b.initialise();
+
     assertThat(b.getLibraries()).hasSize(2);
     assertThat(b.getLibraries().iterator().next().getClasses()).hasSize(1);
-    assertThat(b.getLibraries().iterator().next().getResources()).hasSize(4);
+    assertThat(b.getLibraries().iterator().next().getResources()).hasSize(5);
   }
 
+  @Test
+  public void lookingUpResources() throws IOException {
+    StickyEmbedder b = new StickyEmbedder("--debug", "--trace") {
+      @Override
+      protected File deriveApplicationFile() {
+        return new File("target/dependency/sticky-deployer-sample-2jar-sample.jar");
+      }
+    };
+
+    b.initialise();
+
+    assertThat(b.getLibraries()).hasSize(2);
+    assertThat(b.getLibraries().iterator().next().getClasses()).hasSize(1);
+    assertThat(b.getLibraries().iterator().next().getResources()).hasSize(8);
+
+    URL url = b.getClassLoader().findResource("net/stickycode/deploy/sample/babysteps/run.properties");
+    assertThat(url).isNotNull();
+    InputStream i = url.openStream();
+    assertThat(i).isNotNull();
+    assertThat(new BufferedReader(new InputStreamReader(i)).readLine()).isEqualTo("run=running is step 3");
+
+    Enumeration<URL> e = b.getClassLoader().findResources("net/stickycode/deploy/sample/babysteps/run.properties");
+    assertThat(e.hasMoreElements()).isTrue();
+    assertThat(e.nextElement()).isNotNull();
+    assertThat(e.hasMoreElements()).isFalse();
+
+    Enumeration<URL> manifests = b.getClassLoader().findResources("net/stickycode/deploy/sample/duplicate.properties");
+    assertThat(manifests.hasMoreElements()).isTrue();
+    assertThat(manifests.nextElement()).isNotNull();
+    assertThat(manifests.hasMoreElements()).isTrue();
+    assertThat(manifests.nextElement()).isNotNull();
+    assertThat(manifests.hasMoreElements()).isFalse();
+
+
+  }
 }

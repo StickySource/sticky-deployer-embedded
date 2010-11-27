@@ -28,19 +28,28 @@ import java.util.zip.ZipFile;
 
 public class StickyEmbedder {
 
+  private boolean debug;
+  private boolean trace;
+
   private final List<StickyLibrary> libraries = new LinkedList<StickyLibrary>();
   private final File application;
   private final String[] args;
-  private boolean debug;
+  private StickyClassLoader classLoader;
 
   public StickyEmbedder(String... args) {
     this.args = args;
     for (String s : args) {
       if ("--debug".equals(s))
         this.debug = true;
+
+      if ("--trace".equals(s))
+        this.trace = true;
     }
 
     application = deriveApplicationFile();
+  }
+
+  public void initialise() {
     try {
       ZipFile file = new ZipFile(application);
       loadEntries(file);
@@ -51,7 +60,14 @@ public class StickyEmbedder {
     catch (IOException e) {
       throw new RuntimeException(e);
     }
+    classLoader = new StickyClassLoader(ClassLoader.getSystemClassLoader(), this);
+    Thread.currentThread().setContextClassLoader(classLoader);
   }
+
+//  private void defineProtocolHandler() {
+//    Handler.setUrlConnectionFactory(new StickyUrlConectionFactory(embedder))
+//    String protocolHandlers = System.getProperty("");
+//  }
 
   protected File deriveApplicationFile() {
     return new File(StickyEmbedder.class.getProtectionDomain().getCodeSource().getLocation().getPath());
@@ -62,7 +78,7 @@ public class StickyEmbedder {
     while (entries.hasMoreElements()) {
       ZipEntry zipEntry = (ZipEntry) entries.nextElement();
       if (zipEntry.getName().endsWith(".jar")) {
-        debug("Found jar %s", zipEntry.getName());
+        debug("Loading jar %s", zipEntry.getName());
         libraries.add(new StickyLibrary(this, file, zipEntry.getName()));
       }
     }
@@ -71,6 +87,7 @@ public class StickyEmbedder {
   public static void main(String[] args) {
     System.out.println("Starting StickyEmbedder");
     StickyEmbedder embedder = new StickyEmbedder(args);
+    embedder.initialise();
     embedder.launch();
   }
 
@@ -79,14 +96,12 @@ public class StickyEmbedder {
   }
 
   public void launch() {
-    StickyClassLoader l = new StickyClassLoader(ClassLoader.getSystemClassLoader(), this);
-    Thread.currentThread().setContextClassLoader(l);
     try {
-      Class<?> e = l.loadClass("net.stickycode.deploy.Embedded");
+      Class<?> e = classLoader.loadClass("net.stickycode.deploy.Embedded");
       if (Runnable.class.isAssignableFrom(e))
-        launchRunnable(l, e);
+        launchRunnable(classLoader, e);
       else
-        launchMain(l, e);
+        launchMain(classLoader, e);
     }
     catch (ClassNotFoundException e) {
       throw new RuntimeException(e);
@@ -94,6 +109,7 @@ public class StickyEmbedder {
   }
 
   private void launchMain(StickyClassLoader l, Class<?> klass) {
+    debug("Loading net.stickycode.deploy.Embedded by main method");
     try {
       Method main = klass.getMethod("main", new Class[] {String[].class});
       main.invoke(null, new Object[] {args});
@@ -117,11 +133,18 @@ public class StickyEmbedder {
   }
 
   private void launchRunnable(StickyClassLoader l, Class<?> e) {
+    debug("Loading net.stickycode.deploy.Embedded as Runnable");
     Runnable r = constructRunnable(e);
     Thread t = new Thread(r);
     t.setContextClassLoader(l);
     t.setDaemon(false);
     t.start();
+    try {
+      t.join();
+    }
+    catch (InterruptedException e1) {
+      throw new RuntimeException(e1);
+    }
   }
 
   private Runnable constructRunnable(Class<?> e) {
@@ -158,7 +181,26 @@ public class StickyEmbedder {
 
   public void debug(String message, Object... parameters) {
     if (debug)
-      System.err.printf(message, parameters);
+      System.err.println(String.format(message, parameters));
+  }
+
+  public void trace(String message, Object... parameters) {
+    if (trace)
+      System.err.println(String.format(message, parameters));
+  }
+
+
+  public StickyClassLoader getClassLoader() {
+    return classLoader;
+  }
+
+  public StickyLibrary getLibrary(String jarPath) {
+    for (StickyLibrary l : libraries) {
+      if (l.getJarPath().equals(jarPath))
+        return l;
+    }
+
+    throw new RuntimeException(jarPath + " not found");
   }
 
 }

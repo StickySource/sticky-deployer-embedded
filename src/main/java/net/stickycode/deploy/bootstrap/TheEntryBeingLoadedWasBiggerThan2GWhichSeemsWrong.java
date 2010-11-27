@@ -13,10 +13,10 @@
 package net.stickycode.deploy.bootstrap;
 
 @SuppressWarnings("serial")
-public class TheClassBeingLoadedWasBiggerThan2GWhichSeemsWrong
+public class TheEntryBeingLoadedWasBiggerThan2GWhichSeemsWrong
     extends RuntimeException {
 
-  public TheClassBeingLoadedWasBiggerThan2GWhichSeemsWrong(
+  public TheEntryBeingLoadedWasBiggerThan2GWhichSeemsWrong(
       String className, long compressedSize, long size, long bytesLoaded) {
 
     super(String.format(
