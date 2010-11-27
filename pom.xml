@@ -62,6 +62,13 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>javax.inject</groupId>
+			<artifactId>javax.inject</artifactId>
+			<version>1</version>
+			<type>jar</type>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>net.stickycode.deploy.sample</groupId>
 			<artifactId>sticky-deployer-sample-2jar</artifactId>
 			<version>[1,2)</version>
@@ -109,10 +116,7 @@
 							<mainClass>net.stickycode.deploy.bootstrap.StickyEmbedder</mainClass>
 						</manifest>
 					</archive>
-						<finalName>${project.artifactId}</finalName>
-					<descriptors>
-						<descriptor>src/test/resources/application.xml</descriptor>
-					</descriptors>
+					<finalName>${project.artifactId}</finalName>
 				</configuration>
 				<executions>
 					<execution>
@@ -121,6 +125,24 @@
 						<goals>
 							<goal>single</goal>
 						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>src/main/assembly/sample.xml</descriptor>
+							</descriptors>
+						</configuration>
+					</execution>
+
+					<execution>
+						<id>war-overlay</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>src/main/assembly/war-overlay.xml</descriptor>
+							</descriptors>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>

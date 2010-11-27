@@ -1,7 +1,3 @@
-package net.stickycode.deploy.bootstrap;
-
-import java.util.Map.Entry;
-
 /**
  * Copyright (c) 2010 RedEngine Ltd, http://www.redengine.co.nz. All rights reserved.
  *
@@ -14,13 +10,16 @@ import java.util.Map.Entry;
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
+package net.stickycode.deploy.bootstrap;
 
-public class Embedded {
+@SuppressWarnings("serial")
+public class TheUncompressedSizeListedInJarIsGreaterThan2GbWhichSeemsWrong
+    extends RuntimeException {
 
-  public static void main(String[] args) {
-    for (Entry<Object, Object> e : System.getProperties().entrySet()) {
-      System.out.println(e.getKey() + " = " + e.getValue());
-    }
+  public TheUncompressedSizeListedInJarIsGreaterThan2GbWhichSeemsWrong(
+      String className, long compressedSize, long size) {
+    super(String.format("The size of %s was %s which seems too big. The compressed size is %s.",
+        className, size, compressedSize));
   }
 
 }

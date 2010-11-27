@@ -12,27 +12,15 @@
  */
 package net.stickycode.deploy.bootstrap;
 
-import java.io.File;
+@SuppressWarnings("serial")
+public class TheClassBeingLoadedWasBiggerThan2GWhichSeemsWrong
+    extends RuntimeException {
 
-import org.junit.Test;
+  public TheClassBeingLoadedWasBiggerThan2GWhichSeemsWrong(
+      String className, long compressedSize, long size, long bytesLoaded) {
 
-import static org.fest.assertions.Assertions.assertThat;
-
-
-public class BootstrapFunctionalTest {
-
-  @Test
-  public void boot() throws ClassNotFoundException {
-    StickyEmbedder b = new StickyEmbedder() {
-      @Override
-      protected File deriveApplicationFile() {
-        return new File("target/sticky-deployer-embedded-sample.jar");
-      }
-    };
-
-    assertThat(b.getLibraries()).hasSize(2);
-    assertThat(b.getLibraries().iterator().next().getClasses()).hasSize(1);
-    assertThat(b.getLibraries().iterator().next().getResources()).hasSize(4);
+    super(String.format(
+        "The size of %s was %s which seems too big. In the manifest the compressed size was %s and the real size was %s.",
+        className, bytesLoaded, compressedSize, size));
   }
-
 }

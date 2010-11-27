@@ -15,24 +15,14 @@ package net.stickycode.deploy.bootstrap;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URL;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
-
 
 public class StickyClassLoader
     extends ClassLoader {
 
   private final StickyEmbedder embedder;
-
-//  public StickyClassLoader() {
-//    super();
-//  }
-//
-//  public StickyClassLoader(ClassLoader parent) {
-//    super(parent);
-//  }
 
   public StickyClassLoader(ClassLoader parent, StickyEmbedder stickyEmbedder) {
     super(parent);
@@ -42,14 +32,10 @@ public class StickyClassLoader
   @Override
   protected Class<?> findClass(String name) throws ClassNotFoundException {
     for (StickyLibrary j : embedder.getLibraries()) {
-      System.out.println("trying " + j + " for " + name);
       if (j.getClasses().contains(name)) {
-        System.out.println("found");
+        embedder.debug("loading %s from %s", j, name);
         return loadClass(j, name);
       }
-//      StickyClass klass = j.locate(name);
-//      if (klass != null)
-//        return defineClass(name, klass.getBytes(), 0, klass.getLength());
     }
     throw new ClassNotFoundException(name);
   }
@@ -81,36 +67,38 @@ public class StickyClassLoader
   }
 
   private Class<?> load(String name, JarInputStream i, JarEntry current) throws IOException {
-    if (current.getSize() > Integer.MAX_VALUE)
-      throw new RuntimeException("Why is your class so big?");
-    int size = (int)current.getSize();
-    if (size < 0)
-      size = 2048;
-
-    byte[] b = copy(i, size);
-//    int size = (int)current.getSize();
-//    if (size < 0)
-//      size = 10000;
-//    byte[] b = new byte[size];
-//    int read = i.read(b, 0, size);
-    System.out.println("Read " + b.length);
-//    for (int k = 0; k < read; k++) {
-//      System.out.print(Integer.toString( ( b[k] & 0xff ) + 0x100, 16).substring( 1 ));
-//    }
-
+    byte[] b = copy(i, current);
     return defineClass(name, b, 0, b.length);
   }
 
-
-  protected byte[] copy(InputStream in, int size) throws IOException {
+  protected byte[] copy(InputStream in, JarEntry current) throws IOException {
+    int size = deriveClassSize(current);
     ByteArrayOutputStream baos = new ByteArrayOutputStream(size);
     byte[] buf = new byte[2048];
-    while (true) {
-        int len = in.read(buf);
-        if (len < 0)
-          return baos.toByteArray();
+    while (baos.size() < (Integer.MAX_VALUE - 2048)) {
+      int len = in.read(buf);
+      if (len < 0)
+        return baos.toByteArray();
 
-        baos.write(buf, 0, len);
+      baos.write(buf, 0, len);
     }
-}
+
+    throw new TheClassBeingLoadedWasBiggerThan2GWhichSeemsWrong(current.getName(), baos.size(), current.getCompressedSize(), current.getSize());
+  }
+
+  /**
+   * Return the size of the class so that the byte array output stream is optimally sized and no copies are needed.
+   *
+   * If the jar is dodgy and does not have proper sizes for the classes then return 2048 which is a reasonably guess for the average
+   * class.
+   */
+  private int deriveClassSize(JarEntry current) {
+    if (current.getSize() >= Integer.MAX_VALUE)
+      throw new TheUncompressedSizeListedInJarIsGreaterThan2GbWhichSeemsWrong(current.getName(), current.getCompressedSize(), current.getSize());
+
+    int size = (int) current.getSize();
+    if (size < 0)
+      size = 2048;
+    return size;
+  }
 }
