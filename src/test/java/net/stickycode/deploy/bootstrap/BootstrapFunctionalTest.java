@@ -32,7 +32,7 @@ public class BootstrapFunctionalTest {
     StickyEmbedder b = new StickyEmbedder("--debug", "--trace") {
       @Override
       protected File deriveApplicationFile() {
-        return new File("target/sticky-deployer-embedded-sample.jar");
+        return new File("src/test/samples/sticky-deployer-embedded-sample.jar");
       }
     };
 
@@ -40,7 +40,7 @@ public class BootstrapFunctionalTest {
 
     assertThat(b.getLibraries()).hasSize(2);
     assertThat(b.getLibraries().iterator().next().getClasses()).hasSize(1);
-    assertThat(b.getLibraries().iterator().next().getResources()).hasSize(5);
+    assertThat(b.getLibraries().iterator().next().getResources()).hasSize(4);
   }
 
   @Test
@@ -48,7 +48,7 @@ public class BootstrapFunctionalTest {
     StickyEmbedder b = new StickyEmbedder("--debug", "--trace") {
       @Override
       protected File deriveApplicationFile() {
-        return new File("target/dependency/sticky-deployer-sample-2jar-sample.jar");
+        return new File("src/test/samples/sticky-deployer-sample-2jar-1.2-sample.jar");
       }
     };
 

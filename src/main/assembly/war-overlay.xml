@@ -12,5 +12,6 @@
       <useProjectArtifact>true</useProjectArtifact>
       <unpack>true</unpack>
     </dependencySet>
+
   </dependencySets>
 </assembly>

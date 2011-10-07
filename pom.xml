@@ -20,7 +20,7 @@
 	<parent>
 		<groupId>net.stickycode.parent</groupId>
 		<artifactId>sticky-jar</artifactId>
-		<version>1.5</version>
+		<version>1.18</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 
@@ -37,7 +37,6 @@
 			<groupId>net.stickycode.composite</groupId>
 			<artifactId>sticky-composite-unittest</artifactId>
 			<version>[1,2)</version>
-			<type>jar</type>
 			<scope>test</scope>
 		</dependency>
 		<!--<dependency>
@@ -54,20 +53,26 @@
 			<type>jar</type>
 			<scope>application</scope>
 		</dependency>-->
+
 		<dependency>
 			<groupId>net.stickycode.deploy.sample</groupId>
 			<artifactId>sticky-deployer-sample-helloworld</artifactId>
 			<version>[1,2)</version>
-			<type>jar</type>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>javax.inject</groupId>
 			<artifactId>javax.inject</artifactId>
 			<version>1</version>
-			<type>jar</type>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>net.stickycode.deploy.sample</groupId>
+			<artifactId>sticky-deployer-sample-cli</artifactId>
+			<version>[1,2)</version>
+			<scope>provided</scope>
+		</dependency>
+
 		<dependency>
 			<groupId>net.stickycode.deploy.sample</groupId>
 			<artifactId>sticky-deployer-sample-2jar</artifactId>
@@ -146,6 +151,7 @@
 					</execution>
 				</executions>
 			</plugin>
+			<!--
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
@@ -171,6 +177,7 @@
 					</execution>
 				</executions>
 			</plugin>
+			-->
 
 		</plugins>
 	</build>

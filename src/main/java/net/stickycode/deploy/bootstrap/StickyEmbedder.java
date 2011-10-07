@@ -97,15 +97,29 @@ public class StickyEmbedder {
 
   public void launch() {
     try {
-      Class<?> e = classLoader.loadClass("net.stickycode.deploy.Embedded");
-      if (Runnable.class.isAssignableFrom(e))
-        launchRunnable(classLoader, e);
-      else
-        launchMain(classLoader, e);
+      launchClass("net.stickycode.deploy.Embedded");
     }
     catch (ClassNotFoundException e) {
-      throw new RuntimeException(e);
+      debug("net.stickycode.deploy.Embedded not found");
+      for (StickyLibrary library : libraries) {
+        if (library.hasMainClass())
+          try {
+            launchClass(library.getMainClass());
+          }
+          catch (ClassNotFoundException e1) {
+            debug(e1.getMessage());
+          }
+      }
     }
+  }
+
+  private void launchClass(String className) throws ClassNotFoundException {
+    debug("Attempting to load %s", className);
+    Class<?> e = classLoader.loadClass(className);
+    if (Runnable.class.isAssignableFrom(e))
+      launchRunnable(classLoader, e);
+    else
+      launchMain(classLoader, e);
   }
 
   private void launchMain(StickyClassLoader l, Class<?> klass) {

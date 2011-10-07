@@ -17,8 +17,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
@@ -29,8 +29,8 @@ import java.util.zip.ZipFile;
 public class StickyLibrary {
 
   private final String jarPath;
-  private final Set<String> classes = new HashSet<String>();
-  private final Set<String> resources = new HashSet<String>();
+  private final Collection<String> classes = new ArrayList<String>();
+  private final Collection<String> resources = new ArrayList<String>();
   private String mainClass;
 
   private StickyEmbedder embedder;
@@ -101,11 +101,11 @@ public class StickyLibrary {
     return jarPath;
   }
 
-  public Set<String> getClasses() {
+  public Collection<String> getClasses() {
     return classes;
   }
 
-  public Set<String> getResources() {
+  public Collection<String> getResources() {
     return resources;
   }
 
@@ -181,6 +181,10 @@ public class StickyLibrary {
     if (size < 0)
       size = 2048;
     return size;
+  }
+
+  public boolean hasMainClass() {
+    return mainClass != null;
   }
 
 }
