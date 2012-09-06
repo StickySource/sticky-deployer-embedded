@@ -12,7 +12,6 @@
  */
 package net.stickycode.deploy.bootstrap;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -152,7 +151,7 @@ public class StickyClassLoader
   /**
    * Return the size of the class so that the byte array output stream is optimally sized and no copies are needed.
    *
-   * If the jar is dodgy and does not have proper sizes for the classes then return 2048 which is a reasonably guess for the average
+   * If the jar is dodgy and does not have proper sizes for the classes then return 2048 which is a reasonable guess for the average
    * class.
    */
   private int deriveClassSize(JarEntry current) {

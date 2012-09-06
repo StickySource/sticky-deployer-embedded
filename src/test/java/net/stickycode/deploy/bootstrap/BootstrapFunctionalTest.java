@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Enumeration;
 
 import org.junit.Test;
@@ -36,7 +37,7 @@ public class BootstrapFunctionalTest {
       }
     };
 
-    b.initialise();
+    b.initialise(ClassLoader.getSystemClassLoader());
 
     assertThat(b.getLibraries()).hasSize(2);
     assertThat(b.getLibraries().iterator().next().getClasses()).hasSize(1);
@@ -45,14 +46,15 @@ public class BootstrapFunctionalTest {
 
   @Test
   public void lookingUpResources() throws IOException {
+    final File file = new File("src/test/samples/sticky-deployer-sample-2jar-1.2-sample.jar");
     StickyEmbedder b = new StickyEmbedder("--debug", "--trace") {
       @Override
       protected File deriveApplicationFile() {
-        return new File("src/test/samples/sticky-deployer-sample-2jar-1.2-sample.jar");
+        return file;
       }
     };
 
-    b.initialise();
+    b.initialise(new URLClassLoader(new URL[] {new URL("file://" + file.getAbsolutePath())}, ClassLoader.getSystemClassLoader()));
 
     assertThat(b.getLibraries()).hasSize(2);
     assertThat(b.getLibraries().iterator().next().getClasses()).hasSize(1);

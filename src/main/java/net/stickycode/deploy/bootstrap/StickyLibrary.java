@@ -131,7 +131,7 @@ public class StickyLibrary {
 
   private URL getJarStream() {
     embedder.trace("opening jar /%s", jarPath);
-    URL url = embedder.getClass().getResource("/" + jarPath);
+    URL url = embedder.getClassLoader().getResource(jarPath);
     if (url == null)
       throw new RuntimeException("Where did " + jarPath + " go?");
 

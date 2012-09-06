@@ -49,7 +49,7 @@ public class StickyEmbedder {
     application = deriveApplicationFile();
   }
 
-  public void initialise() {
+  public void initialise(ClassLoader parent) {
     try {
       ZipFile file = new ZipFile(application);
       loadEntries(file);
@@ -60,7 +60,7 @@ public class StickyEmbedder {
     catch (IOException e) {
       throw new RuntimeException(e);
     }
-    classLoader = new StickyClassLoader(ClassLoader.getSystemClassLoader(), this);
+    classLoader = new StickyClassLoader(parent, this);
     Thread.currentThread().setContextClassLoader(classLoader);
   }
 
@@ -87,7 +87,7 @@ public class StickyEmbedder {
   public static void main(String[] args) {
     System.out.println("Starting StickyEmbedder");
     StickyEmbedder embedder = new StickyEmbedder(args);
-    embedder.initialise();
+    embedder.initialise(ClassLoader.getSystemClassLoader());
     embedder.launch();
   }
 

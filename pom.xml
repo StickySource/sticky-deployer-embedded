@@ -1,23 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-
-	Copyright (c) 2010 RedEngine Ltd, http://www.redengine.co.nz. All rights reserved.
-
-	This program is licensed to you under the Apache License Version 2.0,
-	and you may not use this file except in compliance with the Apache License Version 2.0.
-	You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
-
-	Unless required by applicable law or agreed to in writing,
-	software distributed under the Apache License Version 2.0 is distributed on an
-	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
-
--->
+<!-- Copyright (c) 2012 RedEngine Ltd, http://www.redengine.co.nz. All rights reserved. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<parent>
 		<groupId>net.stickycode.parent</groupId>
 		<artifactId>sticky-jar</artifactId>
-		<version>1.18</version>
+		<version>1.24</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 
@@ -26,30 +13,16 @@
 	<version>0.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>sticky-deployer-embedded</name>
+	<name>sticky-deployer-embedded-0</name>
 
 	<inceptionYear>2010</inceptionYear>
 	<dependencies>
 		<dependency>
 			<groupId>net.stickycode.composite</groupId>
 			<artifactId>sticky-composite-unittest</artifactId>
-			<version>[1,2)</version>
+			<version>[2,3)</version>
 			<scope>test</scope>
 		</dependency>
-		<!--<dependency>
-			<groupId>net.stickycode</groupId>
-			<artifactId>sticky-exception</artifactId>
-			<version>[1,2)</version>
-			<type>jar</type>
-			<scope>application</scope>
-		</dependency>-->
-		<!--<dependency>
-			<groupId>net.stickycode</groupId>
-			<artifactId>sticky-stereotype</artifactId>
-			<version>[1,2)</version>
-			<type>jar</type>
-			<scope>application</scope>
-		</dependency>-->
 
 		<dependency>
 			<groupId>net.stickycode.deploy.sample</groupId>
@@ -57,58 +30,10 @@
 			<version>[1,2)</version>
 			<scope>provided</scope>
 		</dependency>
-		<dependency>
-			<groupId>javax.inject</groupId>
-			<artifactId>javax.inject</artifactId>
-			<version>1</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>net.stickycode.deploy.sample</groupId>
-			<artifactId>sticky-deployer-sample-cli</artifactId>
-			<version>[1,2)</version>
-			<scope>provided</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>net.stickycode.deploy.sample</groupId>
-			<artifactId>sticky-deployer-sample-2jar</artifactId>
-			<version>[1,2)</version>
-			<classifier>sample</classifier>
-			<scope>test</scope>
-		</dependency>
 	</dependencies>
 
 	<build>
 		<plugins>
-			<!--<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>copy</id>
-						<phase>package</phase>
-						<goals>
-							<goal>copy</goal>
-						</goals>
-						<configuration>
-							<artifactItems>
-								<artifactItem>
-									<groupId>net.stickycode.deploy.sample</groupId>
-									<artifactId>sticky-deployer-sample-2jar</artifactId>
-									<version>1.1-SNAPSHOT</version>
-									<classifier>sample</classifier>
-									<type>zip</type>
-								</artifactItem>
-							</artifactItems>
-							<stripVersion>true</stripVersion>
-							<overWrite>false</overWrite>
-							<outputDirectory>${project.build.directory}/samples</outputDirectory>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>-->
-
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>2.2</version>
@@ -134,47 +59,20 @@
 						</configuration>
 					</execution>
 
-					<execution>
+					<!-- <execution>
 						<id>war-overlay</id>
 						<phase>package</phase>
 						<goals>
-							<goal>single</goal>
+						<goal>single</goal>
 						</goals>
 						<configuration>
-							<descriptors>
-								<descriptor>src/main/assembly/war-overlay.xml</descriptor>
-							</descriptors>
+						<descriptors>
+						<descriptor>src/main/assembly/war-overlay.xml</descriptor>
+						</descriptors>
 						</configuration>
-					</execution>
+						</execution> -->
 				</executions>
 			</plugin>
-			<!--
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>copy</id>
-						<phase>package</phase>
-						<goals>
-							<goal>copy</goal>
-						</goals>
-						<configuration>
-							<stripVersion>true</stripVersion>
-							<artifactItems>
-								<artifactItem>
-									<groupId>net.stickycode.deploy.sample</groupId>
-									<artifactId>sticky-deployer-sample-2jar</artifactId>
-									<version>1.2-SNAPSHOT</version>
-									<type>jar</type>
-									<classifier>sample</classifier>
-								</artifactItem>
-							</artifactItems>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			-->
 
 		</plugins>
 	</build>
