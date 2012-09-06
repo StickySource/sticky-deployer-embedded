@@ -61,13 +61,7 @@ public class StickyEmbedder {
       throw new RuntimeException(e);
     }
     classLoader = new StickyClassLoader(parent, this);
-    Thread.currentThread().setContextClassLoader(classLoader);
   }
-
-//  private void defineProtocolHandler() {
-//    Handler.setUrlConnectionFactory(new StickyUrlConectionFactory(embedder))
-//    String protocolHandlers = System.getProperty("");
-//  }
 
   protected File deriveApplicationFile() {
     return new File(StickyEmbedder.class.getProtectionDomain().getCodeSource().getLocation().getPath());
