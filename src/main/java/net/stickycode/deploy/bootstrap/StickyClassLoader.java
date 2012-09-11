@@ -25,34 +25,40 @@ import java.util.jar.JarInputStream;
 public class StickyClassLoader
     extends ClassLoader {
 
-  private final StickyEmbedder embedder;
+  private StickyLogger log = StickyLogger.getLogger(getClass());
+
   private StickyEmbeddedUrlStreamHandler urlFactory;
 
-  public StickyClassLoader(ClassLoader parent, StickyEmbedder stickyEmbedder) {
-    super(parent);
-    this.embedder = stickyEmbedder;
-    urlFactory = new StickyEmbeddedUrlStreamHandler(stickyEmbedder);
+  private StickyClasspath classpath;
+
+  public StickyClassLoader(ClassLoader loader, StickyClasspath classpath) {
+    super(loader);
+    this.classpath = classpath;
+    this.urlFactory = new StickyEmbeddedUrlStreamHandler(classpath, loader);
   }
 
   @Override
-  protected Class<?> findClass(String name) throws ClassNotFoundException {
-    embedder.trace("Looking up class %s", name);
-    for (StickyLibrary j : embedder.getLibraries()) {
+  protected Class<?> findClass(String name)
+      throws ClassNotFoundException {
+    log.debug("looking up class %s", name);
+    for (StickyLibrary j : classpath.getLibraries()) {
       if (j.getClasses().contains(name)) {
-        embedder.debug("loading %s from %s", j, name);
+        log.debug("loading %s from %s", name, j);
         return loadClass(j, name);
       }
     }
+
     throw new ClassNotFoundException(name);
   }
 
   @Override
   protected URL findResource(String name) {
-    embedder.trace("Looking up resource %s", name);
-    for (StickyLibrary j : embedder.getLibraries()) {
+    Object[] parameters = { name };
+    log.debug("Looking up resource %s", parameters);
+    for (StickyLibrary j : classpath.getLibraries()) {
       if (j.getResources().contains(name)) {
         URL url = urlFactory.createResourceUrl(name, j);
-        embedder.debug("define url %s for %s in %s", url, name, j);
+        log.info("define url %s for %s in %s", url, name, j);
         return url;
       }
     }
@@ -61,13 +67,15 @@ public class StickyClassLoader
   }
 
   @Override
-  protected Enumeration<URL> findResources(String name) throws IOException {
+  protected Enumeration<URL> findResources(String name)
+      throws IOException {
     LinkedList<URL> list = new LinkedList<URL>();
-    embedder.trace("Looking up resources %s", name);
-    for (StickyLibrary j : embedder.getLibraries()) {
+    Object[] parameters = { name };
+    log.debug("Looking up resources %s", parameters);
+    for (StickyLibrary j : classpath.getLibraries()) {
       if (j.getResources().contains(name)) {
         URL url = urlFactory.createResourceUrl(name, j);
-        embedder.debug("define url %s for %s in %s", url, name, j);
+        log.info("define url %s for %s in %s", url, name, j);
         list.add(url);
       }
     }
@@ -75,44 +83,26 @@ public class StickyClassLoader
     return Collections.enumeration(list);
   }
 
-  // private URL loadResource(StickyLibrary j, String name) {
-  // URL url = embedder.getClass().getResource("/" + j.getJarPath());
-  // try {
-  // JarInputStream jar = new JarInputStream(url.openStream());
-  // return loadResource(jar, name);
-  // }
-  // catch (IOException e) {
-  // throw new RuntimeException(e);
-  // }
-  // }
-  //
-  // private URL loadResource(JarInputStream i, String name) throws IOException {
-  // String searchFor = name.replace('.', '/') + ".class";
-  // JarEntry current = i.getNextJarEntry();
-  // while (current != null) {
-  // if (!current.isDirectory())
-  // if (current.getName().equals(searchFor))
-  // return load(name, i, current);
-  //
-  // i.closeEntry();
-  // current = i.getNextJarEntry();
-  // }
-  //
-  // return null;
-  // }
-
-  private Class<?> loadClass(StickyLibrary j, String name) {
-    URL url = embedder.getClass().getResource("/" + j.getJarPath());
+  private Class<?> loadClass(StickyLibrary j, String name)
+      throws ClassNotFoundException {
+    URL url = j.getJarStream(getParent());
     try {
-      JarInputStream jar = new JarInputStream(url.openStream());
-      return loadClass(jar, name);
+      InputStream openStream = url.openStream();
+      try {
+        JarInputStream jar = new JarInputStream(openStream);
+        return loadClass(jar, name);
+      }
+      finally {
+        openStream.close();
+      }
     }
     catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new ClassNotFoundException("Failed to load " + name, e);
     }
   }
 
-  private Class<?> loadClass(JarInputStream i, String name) throws IOException {
+  private Class<?> loadClass(JarInputStream i, String name)
+      throws IOException {
     String searchFor = name.replace('.', '/') + ".class";
     JarEntry current = i.getNextJarEntry();
     while (current != null) {
@@ -127,12 +117,14 @@ public class StickyClassLoader
     return null;
   }
 
-  private Class<?> load(String name, JarInputStream i, JarEntry current) throws IOException {
+  private Class<?> load(String name, JarInputStream i, JarEntry current)
+      throws IOException {
     byte[] b = copy(i, current);
     return defineClass(name, b, 0, b.length);
   }
 
-  protected byte[] copy(InputStream in, JarEntry current) throws IOException {
+  protected byte[] copy(InputStream in, JarEntry current)
+      throws IOException {
     int size = deriveClassSize(current);
     ByteArrayOutputStream baos = new ByteArrayOutputStream(size);
     byte[] buf = new byte[2048];
@@ -150,7 +142,7 @@ public class StickyClassLoader
 
   /**
    * Return the size of the class so that the byte array output stream is optimally sized and no copies are needed.
-   *
+   * 
    * If the jar is dodgy and does not have proper sizes for the classes then return 2048 which is a reasonable guess for the average
    * class.
    */

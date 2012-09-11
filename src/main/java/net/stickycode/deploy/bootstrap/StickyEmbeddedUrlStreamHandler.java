@@ -19,16 +19,19 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 
-
 public class StickyEmbeddedUrlStreamHandler
     extends URLStreamHandler {
 
   public static String PROTOCOL = "sticky-jar";
 
-  private StickyEmbedder embedder;
+  private StickyClasspath classpath;
 
-  public StickyEmbeddedUrlStreamHandler(StickyEmbedder stickyEmbedder) {
-    this.embedder = stickyEmbedder;
+  private ClassLoader loader;
+
+  public StickyEmbeddedUrlStreamHandler(StickyClasspath classpath, ClassLoader loader) {
+    super();
+    this.classpath = classpath;
+    this.loader = loader;
   }
 
   public URL createResourceUrl(String name, StickyLibrary j) {
@@ -40,13 +43,13 @@ public class StickyEmbeddedUrlStreamHandler
     }
   }
 
-
   @Override
-  protected URLConnection openConnection(URL u) throws IOException {
+  protected URLConnection openConnection(URL u)
+      throws IOException {
     String path = u.getPath();
     int separator = path.indexOf('!');
-    StickyLibrary j = embedder.getLibrary(u.getPath().substring(0, separator));
-    InputStream i = j.getInputStream(u.getPath().substring(separator + 1));
+    StickyLibrary j = classpath.getLibrary(u.getPath().substring(0, separator));
+    InputStream i = j.getInputStream(loader, u.getPath().substring(separator + 1));
     return new StickyEmbeddedUrlConnection(u, u.getPath(), i);
   }
 

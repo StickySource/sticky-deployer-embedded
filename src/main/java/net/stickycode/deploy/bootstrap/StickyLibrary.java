@@ -19,27 +19,23 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
-import java.util.jar.Manifest;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 public class StickyLibrary {
+  
+  private StickyLogger log = StickyLogger.getLogger(getClass());
 
   private final String jarPath;
+
   private final Collection<String> classes = new ArrayList<String>();
+
   private final Collection<String> resources = new ArrayList<String>();
+
   private String mainClass;
 
-  private StickyEmbedder embedder;
-
-  public StickyLibrary(StickyEmbedder embedder, ZipFile zipFile, String jarPath) {
-    super();
-    this.embedder = embedder;
+  public StickyLibrary(String jarPath) {
     this.jarPath = jarPath;
-    index(zipFile);
   }
 
   @Override
@@ -47,40 +43,7 @@ public class StickyLibrary {
     return jarPath;
   }
 
-  private void index(ZipFile zipFile) {
-    ZipEntry entry = zipFile.getEntry(jarPath);
-    try {
-      processEntry(zipFile, entry);
-      embedder.debug("Found %s classes and %s resources in jar %s", classes.size(), resources.size(), jarPath);
-    }
-    catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private void processEntry(ZipFile zipFile, ZipEntry entry) throws IOException {
-    JarInputStream i = new JarInputStream(zipFile.getInputStream(entry));
-    processManifest(i);
-    JarEntry current = i.getNextJarEntry();
-    while (current != null) {
-      if (!current.isDirectory())
-        processName(current.getName());
-
-      i.closeEntry();
-      current = i.getNextJarEntry();
-    }
-  }
-
-  private void processManifest(JarInputStream i) {
-    Manifest manifest = i.getManifest();
-    if (manifest != null) {
-      mainClass = manifest.getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
-      if (mainClass != null)
-        embedder.debug("Found main class %s for jar %s", mainClass, jarPath);
-    }
-  }
-
-  private void processName(String name) {
+  void add(String name) {
     if (name.endsWith(".class"))
       addClass(name.substring(0, name.length() - 6).replace('/', '.'));
     else
@@ -88,12 +51,12 @@ public class StickyLibrary {
   }
 
   private boolean addResource(String name) {
-    embedder.trace("found resource %s", name);
+    log.debug("found resource %s", name);
     return resources.add(name);
   }
 
   private void addClass(String name) {
-    embedder.trace("found class %s", name);
+    log.debug("found class %s", name);
     classes.add(name);
   }
 
@@ -113,8 +76,8 @@ public class StickyLibrary {
     return mainClass;
   }
 
-  public InputStream getInputStream(String path) {
-    URL url = getJarStream();
+  public InputStream getInputStream(ClassLoader loader, String path) {
+    URL url = getJarStream(loader);
     try {
       JarInputStream jar = new JarInputStream(url.openStream());
       try {
@@ -129,16 +92,17 @@ public class StickyLibrary {
     }
   }
 
-  private URL getJarStream() {
-    embedder.trace("opening jar /%s", jarPath);
-    URL url = embedder.getClassLoader().getResource(jarPath);
+  URL getJarStream(ClassLoader loader) {
+    log.debug("opening jar /%s", jarPath);
+    URL url = loader.getResource(jarPath);
     if (url == null)
       throw new RuntimeException("Where did " + jarPath + " go?");
 
     return url;
   }
 
-  private InputStream loadStream(JarInputStream jar, String path) throws IOException {
+  private InputStream loadStream(JarInputStream jar, String path)
+      throws IOException {
     JarEntry current = jar.getNextJarEntry();
     while (current != null) {
       if (!current.isDirectory())
@@ -149,10 +113,12 @@ public class StickyLibrary {
       current = jar.getNextJarEntry();
     }
 
+    jar.closeEntry();
     return null;
   }
 
-  private byte[] load(String name, JarInputStream in, JarEntry current) throws IOException {
+  private byte[] load(String name, JarInputStream in, JarEntry current)
+      throws IOException {
     int size = deriveEntrySize(current);
     ByteArrayOutputStream baos = new ByteArrayOutputStream(size);
     byte[] buf = new byte[2048];
@@ -169,7 +135,7 @@ public class StickyLibrary {
 
   /**
    * Return the size of the class so that the byte array output stream is optimally sized and no copies are needed.
-   *
+   * 
    * If the jar is dodgy and does not have proper sizes for the classes then return 2048 which is a reasonably guess for the average
    * class.
    */
@@ -187,4 +153,8 @@ public class StickyLibrary {
     return mainClass != null;
   }
 
+  void addMain(String mainClass) {
+    this.mainClass = mainClass;
+  }
+  
 }

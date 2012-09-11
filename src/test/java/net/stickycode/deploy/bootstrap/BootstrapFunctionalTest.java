@@ -12,6 +12,8 @@
  */
 package net.stickycode.deploy.bootstrap;
 
+import static org.fest.assertions.Assertions.assertThat;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -23,42 +25,44 @@ import java.util.Enumeration;
 
 import org.junit.Test;
 
-import static org.fest.assertions.Assertions.assertThat;
-
-
 public class BootstrapFunctionalTest {
 
+  static {
+    System.setProperty("debug", "true");
+    System.setProperty("verbose", "true");
+  }
+
   @Test
-  public void jarsWithDodgyStructures() throws ClassNotFoundException {
-    StickyEmbedder b = new StickyEmbedder("--debug", "--trace") {
-      @Override
-      protected File deriveApplicationFile() {
-        return new File("src/test/samples/sticky-deployer-embedded-sample.jar");
-      }
-    };
-
-    b.initialise(ClassLoader.getSystemClassLoader());
-
+  public void jarsWithDodgyStructures()
+      throws ClassNotFoundException {
+    StickyClasspath b = new ZipScanningStickyClasspath().loadZip(new File("src/test/samples/sticky-deployer-embedded-sample.jar"));
     assertThat(b.getLibraries()).hasSize(2);
     assertThat(b.getLibraries().iterator().next().getClasses()).hasSize(1);
     assertThat(b.getLibraries().iterator().next().getResources()).hasSize(4);
   }
 
   @Test
-  public void lookingUpResources() throws IOException {
-    final File file = new File("src/test/samples/sticky-deployer-sample-2jar-1.2-sample.jar");
-    StickyEmbedder b = new StickyEmbedder("--debug", "--trace") {
-      @Override
-      protected File deriveApplicationFile() {
-        return file;
-      }
-    };
-
-    b.initialise(new URLClassLoader(new URL[] {new URL("file://" + file.getAbsolutePath())}, ClassLoader.getSystemClassLoader()));
-
+  public void jars()
+      throws ClassNotFoundException {
+    StickyClasspath b = new ZipScanningStickyClasspath().loadZip(new File("src/test/samples/sticky-deployer-sample-2jar-1.2-sample.jar"));
     assertThat(b.getLibraries()).hasSize(2);
-    assertThat(b.getLibraries().iterator().next().getClasses()).hasSize(1);
-    assertThat(b.getLibraries().iterator().next().getResources()).hasSize(8);
+    assertThat(b.getLibraries().get(0).getClasses()).hasSize(1);
+    assertThat(b.getLibraries().get(0).getResources()).hasSize(8);
+    assertThat(b.getLibraries().get(1).getClasses()).hasSize(1);
+    assertThat(b.getLibraries().get(1).getResources()).hasSize(5);
+  }
+
+  @Test
+  public void lookingUpResources()
+      throws IOException, ClassNotFoundException {
+    File file = new File("src/test/samples/sticky-deployer-sample-2jar-1.2-sample.jar");
+    StickyClasspath classpath = new ZipScanningStickyClasspath().loadZip(file);
+    StickyEmbedder b = new StickyEmbedder();
+    b.initialise(new URLClassLoader(new URL[] { new URL("file://" + file.getAbsolutePath()) }, ClassLoader.getSystemClassLoader()), classpath);
+
+    assertThat(classpath.getLibraries()).hasSize(2);
+    assertThat(classpath.getLibraries().iterator().next().getClasses()).hasSize(1);
+    assertThat(classpath.getLibraries().iterator().next().getResources()).hasSize(8);
 
     URL url = b.getClassLoader().findResource("net/stickycode/deploy/sample/babysteps/run.properties");
     assertThat(url).isNotNull();
@@ -78,6 +82,37 @@ public class BootstrapFunctionalTest {
     assertThat(manifests.nextElement()).isNotNull();
     assertThat(manifests.hasMoreElements()).isFalse();
 
+    assertThat(b.getClassLoader().findResource("nothing/here")).isNull();
+  }
 
+  @Test
+  public void lookingUpClasses()
+      throws IOException, ClassNotFoundException {
+    File file = new File("src/test/samples/sticky-deployer-sample-2jar-1.2-sample.jar");
+    StickyClasspath classpath = new ZipScanningStickyClasspath().loadZip(file);
+    StickyEmbedder b = new StickyEmbedder();
+    b.initialise(new URLClassLoader(new URL[] { new URL("file://" + file.getAbsolutePath()) }, ClassLoader.getSystemClassLoader()), classpath);
+
+    assertThat(classpath.getLibraries()).hasSize(2);
+    assertThat(classpath.getLibraries().iterator().next().getClasses()).hasSize(1);
+    assertThat(classpath.getLibraries().iterator().next().getResources()).hasSize(8);
+
+    Class<?> type = b.getClassLoader().findClass("net.stickycode.deploy.sample.helloworld.HelloWorld");
+    assertThat(type.getSimpleName()).isEqualTo("HelloWorld");
+  }
+
+  @Test(expected = ClassNotFoundException.class)
+  public void classNotFound()
+      throws IOException, ClassNotFoundException {
+    File file = new File("src/test/samples/sticky-deployer-sample-2jar-1.2-sample.jar");
+    StickyClasspath classpath = new ZipScanningStickyClasspath().loadZip(file);
+    StickyEmbedder b = new StickyEmbedder();
+    b.initialise(new URLClassLoader(new URL[] { new URL("file://" + file.getAbsolutePath()) }, ClassLoader.getSystemClassLoader()), classpath);
+
+    assertThat(classpath.getLibraries()).hasSize(2);
+    assertThat(classpath.getLibraries().iterator().next().getClasses()).hasSize(1);
+    assertThat(classpath.getLibraries().iterator().next().getResources()).hasSize(8);
+
+    b.getClassLoader().findClass("net.stickycode.deploy.sample.helloworld.HelloWorldNotHere");
   }
 }

@@ -40,7 +40,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>net.stickycode.deploy.bootstrap.StickyEmbedder</mainClass>
+							<mainClass>net.stickycode.deploy.bootstrap.StickyLauncher</mainClass>
 						</manifest>
 					</archive>
 					<finalName>${project.artifactId}</finalName>
@@ -59,18 +59,6 @@
 						</configuration>
 					</execution>
 
-					<!-- <execution>
-						<id>war-overlay</id>
-						<phase>package</phase>
-						<goals>
-						<goal>single</goal>
-						</goals>
-						<configuration>
-						<descriptors>
-						<descriptor>src/main/assembly/war-overlay.xml</descriptor>
-						</descriptors>
-						</configuration>
-						</execution> -->
 				</executions>
 			</plugin>
 

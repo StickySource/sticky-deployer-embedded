@@ -12,81 +12,35 @@
  */
 package net.stickycode.deploy.bootstrap;
 
-import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
-
 
 public class StickyEmbedder {
 
-  private boolean debug;
-  private boolean trace;
+  private StickyLogger log = StickyLogger.getLogger(getClass());
 
   private final List<StickyLibrary> libraries = new LinkedList<StickyLibrary>();
-  private final File application;
+
   private final String[] args;
+
   private StickyClassLoader classLoader;
+
+  private StickyClasspath classpath;
 
   public StickyEmbedder(String... args) {
     this.args = args;
-    for (String s : args) {
-      if ("--debug".equals(s))
-        this.debug = true;
-
-      if ("--trace".equals(s))
-        this.trace = true;
-    }
-
-    application = deriveApplicationFile();
   }
 
-  public void initialise(ClassLoader parent) {
-    try {
-      ZipFile file = new ZipFile(application);
-      loadEntries(file);
-    }
-    catch (ZipException e) {
-      throw new RuntimeException(e);
-    }
-    catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    classLoader = new StickyClassLoader(parent, this);
-  }
-
-  protected File deriveApplicationFile() {
-    return new File(StickyEmbedder.class.getProtectionDomain().getCodeSource().getLocation().getPath());
-  }
-
-  protected void loadEntries(ZipFile file) throws MalformedURLException {
-    Enumeration<? extends ZipEntry> entries = file.entries();
-    while (entries.hasMoreElements()) {
-      ZipEntry zipEntry = (ZipEntry) entries.nextElement();
-      if (zipEntry.getName().endsWith(".jar")) {
-        debug("Loading jar %s", zipEntry.getName());
-        libraries.add(new StickyLibrary(this, file, zipEntry.getName()));
-      }
-    }
-  }
-
-  public static void main(String[] args) {
-    System.out.println("Starting StickyEmbedder");
-    StickyEmbedder embedder = new StickyEmbedder(args);
-    embedder.initialise(ClassLoader.getSystemClassLoader());
-    embedder.launch();
+  public void initialise(ClassLoader loader, StickyClasspath classpath) {
+    this.classpath = classpath;
+    classLoader = new StickyClassLoader(loader, classpath);
   }
 
   public List<StickyLibrary> getLibraries() {
-    return libraries;
+    return classpath.getLibraries();
   }
 
   public void launch() {
@@ -94,21 +48,25 @@ public class StickyEmbedder {
       launchClass("net.stickycode.deploy.Embedded");
     }
     catch (ClassNotFoundException e) {
-      debug("net.stickycode.deploy.Embedded not found");
+      Object[] parameters = {};
+      log.info("net.stickycode.deploy.Embedded not found", parameters);
       for (StickyLibrary library : libraries) {
         if (library.hasMainClass())
           try {
             launchClass(library.getMainClass());
           }
           catch (ClassNotFoundException e1) {
-            debug(e1.getMessage());
+            Object[] parameters1 = {};
+            log.info(e1.getMessage(), parameters1);
           }
       }
     }
   }
 
-  private void launchClass(String className) throws ClassNotFoundException {
-    debug("Attempting to load %s", className);
+  private void launchClass(String className)
+      throws ClassNotFoundException {
+    Object[] parameters = { className };
+    log.info("Attempting to load %s", parameters);
     Class<?> e = classLoader.loadClass(className);
     if (Runnable.class.isAssignableFrom(e))
       launchRunnable(classLoader, e);
@@ -117,10 +75,11 @@ public class StickyEmbedder {
   }
 
   private void launchMain(StickyClassLoader l, Class<?> klass) {
-    debug("Loading net.stickycode.deploy.Embedded by main method");
+    Object[] parameters = {};
+    log.info("Loading net.stickycode.deploy.Embedded by main method", parameters);
     try {
-      Method main = klass.getMethod("main", new Class[] {String[].class});
-      main.invoke(null, new Object[] {args});
+      Method main = klass.getMethod("main", new Class[] { String[].class });
+      main.invoke(null, new Object[] { args });
     }
     catch (SecurityException e1) {
       throw new RuntimeException(e1);
@@ -141,7 +100,8 @@ public class StickyEmbedder {
   }
 
   private void launchRunnable(StickyClassLoader l, Class<?> e) {
-    debug("Loading net.stickycode.deploy.Embedded as Runnable");
+    Object[] parameters = {};
+    log.info("Loading net.stickycode.deploy.Embedded as Runnable", parameters);
     Runnable r = constructRunnable(e);
     Thread t = new Thread(r);
     t.setContextClassLoader(l);
@@ -168,10 +128,11 @@ public class StickyEmbedder {
     }
   }
 
-  private Object contructEmbedded(Class<?> embedded) throws InstantiationException, IllegalAccessException {
+  private Object contructEmbedded(Class<?> embedded)
+      throws InstantiationException, IllegalAccessException {
     try {
-      Constructor<?> c = embedded.getConstructor(new Class[] {String[].class});
-      return c.newInstance(new Object[] {args});
+      Constructor<?> c = embedded.getConstructor(new Class[] { String[].class });
+      return c.newInstance(new Object[] { args });
     }
     catch (SecurityException e1) {
       throw new RuntimeException(e1);
@@ -186,17 +147,6 @@ public class StickyEmbedder {
       throw new RuntimeException(e);
     }
   }
-
-  public void debug(String message, Object... parameters) {
-    if (debug)
-      System.err.println(String.format(message, parameters));
-  }
-
-  public void trace(String message, Object... parameters) {
-    if (trace)
-      System.err.println(String.format(message, parameters));
-  }
-
 
   public StickyClassLoader getClassLoader() {
     return classLoader;
