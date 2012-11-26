@@ -1,0 +1,17 @@
+!WEB-INF/lib/sticky-deployer-sample-helloworld-1.4.jar
+META-INF/
+META-INF/MANIFEST.MF
+net/
+net/stickycode/
+net/stickycode/deploy/
+net/stickycode/deploy/sample/
+net/stickycode/deploy/sample/helloworld/
+META-INF/maven/
+META-INF/maven/net.stickycode.deploy.sample/
+META-INF/maven/net.stickycode.deploy.sample/sticky-deployer-sample-helloworld/
+net/stickycode/deploy/sample/duplicate.properties
+net/stickycode/deploy/sample/helloworld/HelloWorld.class
+META-INF/maven/net.stickycode.deploy.sample/sticky-deployer-sample-helloworld/dependency.tree
+META-INF/maven/net.stickycode.deploy.sample/sticky-deployer-sample-helloworld/dependency.list
+META-INF/maven/net.stickycode.deploy.sample/sticky-deployer-sample-helloworld/pom.xml
+META-INF/maven/net.stickycode.deploy.sample/sticky-deployer-sample-helloworld/pom.properties
