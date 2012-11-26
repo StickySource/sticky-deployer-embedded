@@ -22,8 +22,6 @@ public class StickyEmbedder {
 
   private StickyLogger log = StickyLogger.getLogger(getClass());
 
-  private final List<StickyLibrary> libraries = new LinkedList<StickyLibrary>();
-
   private final String[] args;
 
   private StickyClassLoader classLoader;
@@ -50,7 +48,8 @@ public class StickyEmbedder {
     catch (ClassNotFoundException e) {
       Object[] parameters = {};
       log.info("net.stickycode.deploy.Embedded not found", parameters);
-      for (StickyLibrary library : libraries) {
+      for (StickyLibrary library : classpath.getLibraries()) {
+        log.debug("Trying %s for main", library);
         if (library.hasMainClass())
           try {
             launchClass(library.getMainClass());
@@ -65,8 +64,7 @@ public class StickyEmbedder {
 
   private void launchClass(String className)
       throws ClassNotFoundException {
-    Object[] parameters = { className };
-    log.info("Attempting to load %s", parameters);
+    log.info("Attempting to load %s", className);
     Class<?> e = classLoader.loadClass(className);
     if (Runnable.class.isAssignableFrom(e))
       launchRunnable(classLoader, e);
@@ -75,8 +73,7 @@ public class StickyEmbedder {
   }
 
   private void launchMain(StickyClassLoader l, Class<?> klass) {
-    Object[] parameters = {};
-    log.info("Loading net.stickycode.deploy.Embedded by main method", parameters);
+    log.info("Loading %s by main method", klass);
     try {
       Method main = klass.getMethod("main", new Class[] { String[].class });
       main.invoke(null, new Object[] { args });
@@ -153,7 +150,7 @@ public class StickyEmbedder {
   }
 
   public StickyLibrary getLibrary(String jarPath) {
-    for (StickyLibrary l : libraries) {
+    for (StickyLibrary l : classpath.getLibraries()) {
       if (l.getJarPath().equals(jarPath))
         return l;
     }

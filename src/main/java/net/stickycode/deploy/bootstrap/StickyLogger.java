@@ -2,9 +2,9 @@ package net.stickycode.deploy.bootstrap;
 
 public class StickyLogger {
 
-  private boolean debug = new Boolean(System.getProperty("debug"));
+  private boolean debug = new Boolean(System.getProperty("launcher.debug"));
 
-  private boolean verbose = new Boolean(System.getProperty("verbose"));
+  private boolean verbose = new Boolean(System.getProperty("launcher.verbose"));
 
   private Class<?> callee;
 
@@ -22,7 +22,7 @@ public class StickyLogger {
   }
 
   public void info(String message, Object... args) {
-    if (verbose)
+    if (verbose || debug)
       out("I ", message, args);
   }
 

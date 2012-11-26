@@ -93,7 +93,7 @@ public class StickyLibrary {
   }
 
   URL getJarStream(ClassLoader loader) {
-    log.debug("opening jar /%s", jarPath);
+    log.debug("opening jar %s", jarPath);
     URL url = loader.getResource(jarPath);
     if (url == null)
       throw new RuntimeException("Where did " + jarPath + " go?");

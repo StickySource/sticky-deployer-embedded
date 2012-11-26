@@ -59,6 +59,19 @@
 						</configuration>
 					</execution>
 
+					<execution>
+						<id>sample-application2</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>src/main/assembly/sample2.xml</descriptor>
+							</descriptors>
+						</configuration>
+					</execution>
+
 				</executions>
 			</plugin>
 

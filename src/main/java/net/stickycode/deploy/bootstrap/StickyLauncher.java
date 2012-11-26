@@ -7,11 +7,11 @@ public class StickyLauncher {
 
   void configure(String[] args) {
     for (String s : args) {
-      if ("--debug".equals(s))
-        System.setProperty("debug", "true");
+      if ("--launcher-debug".equals(s))
+        System.setProperty("launcher.debug", "true");
 
-      if ("--verbose".equals(s))
-        System.setProperty("verbose", "true");
+      if ("--launcher-verbose".equals(s))
+        System.setProperty("launcher.verbose", "true");
     }
   }
 
@@ -27,11 +27,12 @@ public class StickyLauncher {
 
   void embed(ClassLoader systemClassLoader, String[] args) {
     StickyEmbedder embedder = new StickyEmbedder();
-    embedder.initialise(systemClassLoader, buildClasspath());
+    StickyClasspath buildClasspath = buildClasspath();
+    embedder.initialise(systemClassLoader, buildClasspath);
     embedder.launch();
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws InterruptedException {
     StickyLauncher launcher = new StickyLauncher();
     launcher.configure(args);
     launcher.embed(ClassLoader.getSystemClassLoader(), args);
