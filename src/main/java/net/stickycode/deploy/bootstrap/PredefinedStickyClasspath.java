@@ -2,6 +2,7 @@ package net.stickycode.deploy.bootstrap;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,8 @@ public class PredefinedStickyClasspath
   private List<StickyLibrary> libraries = new ArrayList<StickyLibrary>();
 
   private Map<String, StickyLibrary> lookup = new HashMap<String, StickyLibrary>();
+
+  private int mainCount = 0;
 
   /**
    * Load a file that looks like
@@ -38,6 +41,7 @@ public class PredefinedStickyClasspath
           String main = line.substring(1);
           logger.debug("Found main %s", main);
           current.addMain(main);
+          mainCount += 1;
         }
         else
           current.add(line);
@@ -62,6 +66,30 @@ public class PredefinedStickyClasspath
   @Override
   public StickyLibrary getLibrary(String path) {
     return lookup.get(path);
+  }
+
+  @Override
+  public boolean hasSingularMain() {
+    return mainCount == 1;
+  }
+
+  @Override
+  public String getSingularMain() {
+    for (StickyLibrary l : libraries)
+      if (l.hasMainClass())
+        return l.getMainClass();
+
+    throw new RuntimeException("Should have a main but can't find it");
+  }
+
+  @Override
+  public List<StickyLibrary> getLibrariesByMain(String shortName) {
+    for (StickyLibrary l : libraries)
+      if (l.hasMainClass())
+        if (l.getMainClass().endsWith(shortName))
+          return Collections.singletonList(l);
+
+    return Collections.emptyList();
   }
 
 }

@@ -22,6 +22,8 @@ public class ZipScanningStickyClasspath
   private List<StickyLibrary> libraries = new ArrayList<StickyLibrary>();
 
   private Map<String, StickyLibrary> lookup = new HashMap<String, StickyLibrary>();
+  
+  private int mainCount = 0;
 
   StickyClasspath loadZip(File application) {
     try {
@@ -88,8 +90,10 @@ public class ZipScanningStickyClasspath
     Manifest manifest = i.getManifest();
     if (manifest != null) {
       String mainClass = manifest.getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
-      if (mainClass != null)
+      if (mainClass != null) {
         library.addMain(mainClass);
+        mainCount += 1;
+      }
     }
   }
 
@@ -103,4 +107,27 @@ public class ZipScanningStickyClasspath
     return lookup.get(path);
   }
 
+  @Override
+  public boolean hasSingularMain() {
+    return mainCount == 1;
+  }
+
+  @Override
+  public String getSingularMain() {
+    for (StickyLibrary l : libraries)
+      if (l.hasMainClass())
+        return l.getMainClass();
+
+    throw new RuntimeException("Should have a main but can't find it");
+  }
+
+  @Override
+  public List<StickyLibrary> getLibrariesByMain(String shortName) {
+    for (StickyLibrary l : libraries)
+      if (l.hasMainClass())
+        if (l.getMainClass().endsWith(shortName))
+          return Collections.singletonList(l);
+
+    return Collections.emptyList();
+  }
 }

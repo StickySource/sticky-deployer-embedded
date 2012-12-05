@@ -15,8 +15,8 @@ package net.stickycode.deploy.bootstrap;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class StickyEmbedder {
 
@@ -27,6 +27,8 @@ public class StickyEmbedder {
   private StickyClassLoader classLoader;
 
   private StickyClasspath classpath;
+
+  private Pattern main = Pattern.compile("[A-Z][a-zA-Z0-9_]*");
 
   public StickyEmbedder(String... args) {
     this.args = args;
@@ -43,26 +45,34 @@ public class StickyEmbedder {
 
   public void launch() {
     try {
-      launchClass("net.stickycode.deploy.Embedded");
+      launchClassExplosively("net.stickycode.deploy.Embedded");
     }
     catch (ClassNotFoundException e) {
-      Object[] parameters = {};
-      log.info("net.stickycode.deploy.Embedded not found", parameters);
-      for (StickyLibrary library : classpath.getLibraries()) {
-        log.debug("Trying %s for main", library);
-        if (library.hasMainClass())
-          try {
-            launchClass(library.getMainClass());
-          }
-          catch (ClassNotFoundException e1) {
-            Object[] parameters1 = {};
-            log.info(e1.getMessage(), parameters1);
-          }
-      }
+      log.info("net.stickycode.deploy.Embedded not found");
+      loadByMain();
     }
   }
 
-  private void launchClass(String className)
+  private void loadByMain() {
+    if (classpath.hasSingularMain())
+      launchClass(classpath.getSingularMain());
+
+    for (String arg : args)
+      if (main.matcher(arg).matches())
+        for (StickyLibrary l : classpath.getLibrariesByMain(arg))
+            launchClass(l.getMainClass());
+  }
+
+  private void launchClass(String className) {
+    try {
+      launchClassExplosively(className);
+    }
+    catch (ClassNotFoundException e1) {
+      log.info(e1.getMessage());
+    }
+  }
+
+  private void launchClassExplosively(String className)
       throws ClassNotFoundException {
     log.info("Attempting to load %s", className);
     Class<?> e = classLoader.loadClass(className);
