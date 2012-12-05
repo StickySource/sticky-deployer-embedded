@@ -51,12 +51,10 @@ public class StickyLibrary {
   }
 
   private boolean addResource(String name) {
-    log.debug("found resource %s", name);
     return resources.add(name);
   }
 
   private void addClass(String name) {
-    log.debug("found class %s", name);
     classes.add(name);
   }
 
@@ -93,7 +91,7 @@ public class StickyLibrary {
   }
 
   URL getJarStream(ClassLoader loader) {
-    log.debug("opening jar %s", jarPath);
+//    log.debug("opening jar %s", jarPath);
     URL url = loader.getResource(jarPath);
     if (url == null)
       throw new RuntimeException("Where did " + jarPath + " go?");
@@ -130,7 +128,7 @@ public class StickyLibrary {
       baos.write(buf, 0, len);
     }
 
-    throw new TheEntryBeingLoadedWasBiggerThan2GWhichSeemsWrong(current.getName(), baos.size(), current.getCompressedSize(), current.getSize());
+    throw new TheEntryBeingLoadedWasBiggerThan2GWhichSeemsWrongException(current.getName(), baos.size(), current.getCompressedSize(), current.getSize());
   }
 
   /**
@@ -141,7 +139,7 @@ public class StickyLibrary {
    */
   private int deriveEntrySize(JarEntry current) {
     if (current.getSize() >= Integer.MAX_VALUE)
-      throw new TheUncompressedSizeListedInJarIsGreaterThan2GbWhichSeemsWrong(current.getName(), current.getCompressedSize(), current.getSize());
+      throw new TheUncompressedSizeListedInJarIsGreaterThan2GbWhichSeemsWrongException(current.getName(), current.getCompressedSize(), current.getSize());
 
     int size = (int) current.getSize();
     if (size < 0)

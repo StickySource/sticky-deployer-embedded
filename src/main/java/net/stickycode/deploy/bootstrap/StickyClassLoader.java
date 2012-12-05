@@ -136,7 +136,7 @@ public class StickyClassLoader
       baos.write(buf, 0, len);
     }
 
-    throw new TheEntryBeingLoadedWasBiggerThan2GWhichSeemsWrong(current.getName(), baos.size(), current.getCompressedSize(),
+    throw new TheEntryBeingLoadedWasBiggerThan2GWhichSeemsWrongException(current.getName(), baos.size(), current.getCompressedSize(),
         current.getSize());
   }
 
@@ -148,7 +148,7 @@ public class StickyClassLoader
    */
   private int deriveClassSize(JarEntry current) {
     if (current.getSize() >= Integer.MAX_VALUE)
-      throw new TheUncompressedSizeListedInJarIsGreaterThan2GbWhichSeemsWrong(current.getName(), current.getCompressedSize(),
+      throw new TheUncompressedSizeListedInJarIsGreaterThan2GbWhichSeemsWrongException(current.getName(), current.getCompressedSize(),
           current.getSize());
 
     int size = (int) current.getSize();

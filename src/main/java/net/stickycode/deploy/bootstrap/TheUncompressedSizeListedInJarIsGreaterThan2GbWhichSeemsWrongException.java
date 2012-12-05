@@ -13,14 +13,13 @@
 package net.stickycode.deploy.bootstrap;
 
 @SuppressWarnings("serial")
-public class TheEntryBeingLoadedWasBiggerThan2GWhichSeemsWrong
+public class TheUncompressedSizeListedInJarIsGreaterThan2GbWhichSeemsWrongException
     extends RuntimeException {
 
-  public TheEntryBeingLoadedWasBiggerThan2GWhichSeemsWrong(
-      String className, long compressedSize, long size, long bytesLoaded) {
-
-    super(String.format(
-        "The size of %s was %s which seems too big. In the manifest the compressed size was %s and the real size was %s.",
-        className, bytesLoaded, compressedSize, size));
+  public TheUncompressedSizeListedInJarIsGreaterThan2GbWhichSeemsWrongException(
+      String entryName, long compressedSize, long size) {
+    super(String.format("The size of %s was %s which seems too big. The compressed size is %s.",
+        entryName, size, compressedSize));
   }
+
 }

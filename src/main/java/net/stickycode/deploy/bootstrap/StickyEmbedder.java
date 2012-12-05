@@ -73,7 +73,7 @@ public class StickyEmbedder {
   }
 
   private void launchMain(StickyClassLoader l, Class<?> klass) {
-    log.info("Loading %s by main method", klass);
+    log.info("Loading %s by main method with args %s", klass, args);
     try {
       Method main = klass.getMethod("main", new Class[] { String[].class });
       main.invoke(null, new Object[] { args });

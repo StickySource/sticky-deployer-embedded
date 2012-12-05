@@ -26,7 +26,7 @@ public class StickyLauncher {
   }
 
   void embed(ClassLoader systemClassLoader, String[] args) {
-    StickyEmbedder embedder = new StickyEmbedder();
+    StickyEmbedder embedder = new StickyEmbedder(args);
     StickyClasspath buildClasspath = buildClasspath();
     embedder.initialise(systemClassLoader, buildClasspath);
     embedder.launch();
