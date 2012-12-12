@@ -23,8 +23,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
 public class StickyLibrary {
-  
-  private StickyLogger log = StickyLogger.getLogger(getClass());
 
   private final String jarPath;
 
@@ -33,6 +31,8 @@ public class StickyLibrary {
   private final Collection<String> resources = new ArrayList<String>();
 
   private String mainClass;
+
+  private String description;
 
   public StickyLibrary(String jarPath) {
     this.jarPath = jarPath;
@@ -91,7 +91,6 @@ public class StickyLibrary {
   }
 
   URL getJarStream(ClassLoader loader) {
-//    log.debug("opening jar %s", jarPath);
     URL url = loader.getResource(jarPath);
     if (url == null)
       throw new RuntimeException("Where did " + jarPath + " go?");
@@ -154,5 +153,13 @@ public class StickyLibrary {
   void addMain(String mainClass) {
     this.mainClass = mainClass;
   }
-  
+
+  public String getDescription() {
+    return description == null ? "N/A" : description;
+  }
+
+  public void setDescription(String substring) {
+    this.description = substring;
+  }
+
 }

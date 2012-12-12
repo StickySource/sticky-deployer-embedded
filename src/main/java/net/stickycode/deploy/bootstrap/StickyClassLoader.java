@@ -40,10 +40,8 @@ public class StickyClassLoader
   @Override
   protected Class<?> findClass(String name)
       throws ClassNotFoundException {
-    log.debug("looking up class %s", name);
     for (StickyLibrary j : classpath.getLibraries()) {
       if (j.getClasses().contains(name)) {
-        log.debug("loading %s from %s", name, j);
         return loadClass(j, name);
       }
     }
@@ -53,12 +51,9 @@ public class StickyClassLoader
 
   @Override
   protected URL findResource(String name) {
-    Object[] parameters = { name };
-    log.debug("Looking up resource %s", parameters);
     for (StickyLibrary j : classpath.getLibraries()) {
       if (j.getResources().contains(name)) {
         URL url = urlFactory.createResourceUrl(name, j);
-        log.info("define url %s for %s in %s", url, name, j);
         return url;
       }
     }
@@ -70,12 +65,9 @@ public class StickyClassLoader
   protected Enumeration<URL> findResources(String name)
       throws IOException {
     LinkedList<URL> list = new LinkedList<URL>();
-    Object[] parameters = { name };
-    log.debug("Looking up resources %s", parameters);
     for (StickyLibrary j : classpath.getLibraries()) {
       if (j.getResources().contains(name)) {
         URL url = urlFactory.createResourceUrl(name, j);
-        log.info("define url %s for %s in %s", url, name, j);
         list.add(url);
       }
     }

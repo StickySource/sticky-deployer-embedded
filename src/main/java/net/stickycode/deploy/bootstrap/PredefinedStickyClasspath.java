@@ -43,6 +43,9 @@ public class PredefinedStickyClasspath
           current.addMain(main);
           mainCount += 1;
         }
+        else if (line.startsWith("\"")) {
+          current.setDescription(line.substring(1));
+        }
         else
           current.add(line);
     }

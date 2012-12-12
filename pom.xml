@@ -14,6 +14,7 @@
 	<packaging>jar</packaging>
 
 	<name>sticky-deployer-embedded-0</name>
+        <description>Support for running embedded applications from archives without extraction</description>
 
 	<inceptionYear>2010</inceptionYear>
 	<dependencies>

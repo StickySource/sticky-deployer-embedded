@@ -12,9 +12,11 @@
  */
 package net.stickycode.deploy.bootstrap;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URLDecoder;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -54,13 +56,58 @@ public class StickyEmbedder {
   }
 
   private void loadByMain() {
-    if (classpath.hasSingularMain())
+    if (classpath.hasSingularMain()) {
+      log.info("One main found, launching %s", classpath.getSingularMain());
       launchClass(classpath.getSingularMain());
+    }
+    else {
+      if (args.length < 0)
+        usage();
+      else
+        bootSelection();
+    }
+  }
 
+  private void bootSelection() {
+    StickyLibrary selected = selectMain();
+    if (selected != null)
+      launchClass(selected.getMainClass());
+  }
+
+  private void usage() {
+    System.out.println();
+    String path = getJarPath();
+    System.out.println("Usage: java -jar " + path + " Command arg1 arg2 arg3");
+    for (StickyLibrary l : classpath.getLibraries()) {
+      if (l.hasMainClass()) {
+        System.out.print("  ");
+        String mainClass = l.getMainClass();
+        System.out.println(mainClass.substring(mainClass.lastIndexOf('.') + 1) + " - " + l.getDescription());
+      }
+    }
+    System.out.println();
+  }
+
+  private String getJarPath()
+  {
+    String path = StickyEmbedder.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+    try {
+      return URLDecoder.decode(path, "UTF-8");
+    }
+    catch (UnsupportedEncodingException e) {
+      throw new RuntimeException("UTF-8 is always supported, right?", e);
+    }
+  }
+
+  private StickyLibrary selectMain() {
     for (String arg : args)
       if (main.matcher(arg).matches())
         for (StickyLibrary l : classpath.getLibrariesByMain(arg))
-            launchClass(l.getMainClass());
+          return l;
+
+    System.err.println("No command was specified");
+    usage();
+    return null;
   }
 
   private void launchClass(String className) {
@@ -68,7 +115,7 @@ public class StickyEmbedder {
       launchClassExplosively(className);
     }
     catch (ClassNotFoundException e1) {
-      log.info(e1.getMessage());
+      log.info("Could not find %s to launch", e1.getMessage());
     }
   }
 
