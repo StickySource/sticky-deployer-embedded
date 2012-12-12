@@ -120,7 +120,18 @@ public class StickyClassLoader
   private Class<?> load(String name, JarInputStream i, JarEntry current)
       throws IOException {
     byte[] b = copy(i, current);
+    createPackageForClass(name);
     return defineClass(name, b, 0, b.length);
+  }
+
+  private void createPackageForClass(String name) {
+    int lastIndexOf = name.lastIndexOf('.');
+    if (lastIndexOf > -1) {
+      String packageName = name.substring(0, lastIndexOf);
+      Package p = getPackage(packageName);
+      if (p == null)
+        definePackage(packageName, null, null, null, null, null, null, null);
+    }
   }
 
   protected byte[] copy(InputStream in, JarEntry current)
