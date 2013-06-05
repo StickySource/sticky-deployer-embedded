@@ -102,7 +102,6 @@ public class StickyClassLoader
         if (current.getName().equals(searchFor))
           return load(name, i, current);
 
-      i.closeEntry();
       current = i.getNextJarEntry();
     }
 
