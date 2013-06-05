@@ -106,11 +106,9 @@ public class StickyLibrary {
         if (current.getName().equals(path))
           return new ByteArrayInputStream(load(path, jar, current));
 
-      jar.closeEntry();
       current = jar.getNextJarEntry();
     }
 
-    jar.closeEntry();
     return null;
   }
 
